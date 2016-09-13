@@ -39,6 +39,7 @@
 #include <utility>
 #include <list>
 #include <memory>
+#include <tuple>
 #include <pthread.h>
 
 /*
@@ -52,7 +53,7 @@
   When MPI is initialized we need to use init_thread with
   multiple required.
 
-  This RMI service operates only in COMM_WORLD.  It easy enough
+  This RMI service operates only in (a clone of) COMM_WORLD.  It easy enough
   to extend to other communicators but the point is to have
   only one server thread for all possible uses.  You just
   have to translate rank_in_comm into rank_in_world by
@@ -161,8 +162,7 @@ namespace madness {
 
         static int testsome_backoff_us;
 
-        static void set_this_thread_is_server() {is_server_thread = true;} // std::cout << "setting this is the server thread " << pthread_self() << std::endl;}
-
+        static void set_this_thread_is_server(bool flag = true) {is_server_thread = flag;}
         static bool get_this_thread_is_server() {return is_server_thread;}
 
         static std::list< std::unique_ptr<RMISendReq> > send_req; // List of outstanding world active messages sent by the server
@@ -196,7 +196,8 @@ namespace madness {
                 attrT attr;
             }; // struct header
 
-            std::list< std::pair<int,size_t> > hugeq; // q for incoming huge messages
+            /// q of huge messages, each msg = {source,nbytes,tag}
+            std::list< std::tuple<int,size_t,int> > hugeq;
 
             SafeMPI::Intracomm comm;
             const int nproc;            // No. of processes in comm world
@@ -207,7 +208,7 @@ namespace madness {
             std::unique_ptr<counterT[]> recv_counters;
             std::size_t max_msg_len_;
             std::size_t nrecv_;
-            std::size_t nssend_;
+            long nssend_;
             std::size_t maxq_;
             std::unique_ptr<void*[]> recv_buf; // Will be at least ALIGNMENT aligned ... +1 for huge messages
             std::unique_ptr<SafeMPI::Request[]> recv_req;
@@ -224,28 +225,33 @@ namespace madness {
             RmiTask();
             virtual ~RmiTask();
 
-            static void set_rmi_task_is_running();   
+            static void set_rmi_task_is_running(bool flag = true);
 
 #if HAVE_INTEL_TBB
             tbb::task* execute() {
-                set_rmi_task_is_running();
+                set_rmi_task_is_running(true);
+                RMI::set_this_thread_is_server(true);
 
-                RMI::set_this_thread_is_server();
                 while (! finished) process_some();
                 finished = false;  // to ensure that RmiTask::exit() that
                                    // triggered the exit proceeds to completion
+
+                RMI::set_this_thread_is_server(false);
+                set_rmi_task_is_running(false);
                 return nullptr;
             }
 #else
             void run() {
-                RMI::set_this_thread_is_server();
+                RMI::set_this_thread_is_server(true);
                 try {
                     while (! finished) process_some();
                     finished = false;
                 } catch(...) {
                     delete this;
+                    RMI::set_this_thread_is_server(false);
                     throw;
                 }
+                RMI::set_this_thread_is_server(false);
                 delete this; // because the task is not actually put into the q
             }
 #endif // HAVE_INTEL_TBB
@@ -267,6 +273,15 @@ namespace madness {
             void post_pending_huge_msg();
 
             void post_recv_buf(int i);
+
+        private:
+
+            /// thread-safely round-robins through tags in [first_tag, first_tag+period) range
+            /// @returns new tag to be used in messaging
+            int unique_tag() const;
+            /// the period of tags returned by unique_tag()
+            /// @warning this bounds how many huge messages each RmiTask will be able to process
+            static constexpr int unique_tag_period() { return 2048; }
 
         }; // class RmiTask
 

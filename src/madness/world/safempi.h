@@ -90,11 +90,11 @@ namespace SafeMPI {
     ///
     /// tags in [1024,4095] ... allocated round-robin by unique_tag
     ///
-    /// tags in [4096,MPI::TAG_UB] ... not used/managed by madness
+    /// tags in [4096,8191] ... reserved for huge msg exchange by RMI
+    ///
+    /// tags in [8192,MPI::TAG_UB] ... not used/managed by madness
 
     static const int RMI_TAG = 1023;
-    static const int RMI_HUGE_ACK_TAG = 1022;
-    static const int RMI_HUGE_DAT_TAG = 1021;
     static const int MPIAR_TAG = 1001;
     static const int DEFAULT_SEND_RECV_TAG = 1000;
 
@@ -160,7 +160,7 @@ namespace SafeMPI {
                     std::ostringstream oss;
                     for(auto s=0; s!=nstatuses; ++s) {
                         int len = 0;
-                        auto status_error = statuses[indices[s]].MPI_ERROR;
+                        auto status_error = statuses[s].MPI_ERROR;
                         if (status_error != MPI_SUCCESS) {
                             oss << "request " << indices[s] << ":";
                             if (MPI_Error_string(status_error, mpi_error_string_, &len) != MPI_SUCCESS)
@@ -594,6 +594,15 @@ namespace SafeMPI {
             int me; MADNESS_MPI_TEST(MPI_Comm_rank(group_comm, &me));
             int nproc; MADNESS_MPI_TEST(MPI_Comm_size(group_comm, &nproc));
             return Intracomm(std::shared_ptr<Impl>(new Impl(group_comm, me, nproc, true)));
+        }
+
+        /**
+         * Clones this Intracomm object
+         *
+         * @return a (deep) copy of this Intracomm object
+         */
+        Intracomm Clone() const {
+          return Create(this->Get_group());
         }
 
         bool operator==(const Intracomm& other) const {

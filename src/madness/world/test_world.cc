@@ -42,8 +42,8 @@
 #endif
 
 #ifdef HAVE_PARSEC
-# include <dague_config.h>
-# ifdef DAGUE_HAVE_CUDA
+# include <parsec_config.h>
+# ifdef PARSEC_HAVE_CUDA
 #  include <cuda_runtime.h>
 # endif
 #endif
@@ -1222,7 +1222,7 @@ void test_multi_world(World& world) {
 }
 
 #ifdef HAVE_PARSEC
-# ifdef DAGUE_HAVE_CUDA
+# ifdef PARSEC_HAVE_CUDA
 
 extern void __cuda_hello_world(); // in hello_world.cu
 class GPUHelloWorldTask : public TaskInterface {
@@ -1294,7 +1294,7 @@ int main(int argc, char** argv) {
           test_multi_world(world);
         }
 
-#ifdef DAGUE_HAVE_CUDA
+#ifdef PARSEC_HAVE_CUDA
         test_cuda0(world);
 #endif
     }

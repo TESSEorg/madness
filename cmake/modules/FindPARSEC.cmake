@@ -37,8 +37,8 @@
 #  PARSEC_INCLUDE_DIRS_DEP       - parsec + dependencies include directories
 #  PARSEC_LIBRARY_DIRS_DEP       - parsec + dependencies link directories
 #  PARSEC_LIBRARIES_DEP          - parsec libraries + dependencies
-#  PARSEC_daguepp_BIN_DIR        - path to parsec driver daguepp
-#  PARSEC_DAGUEPP                - parsec jdf compiler
+#  PARSEC_parsec_ptgpp_BIN_DIR          - path to parsec driver parsec_ptgpp
+#  PARSEC_PTGPP                  - parsec jdf compiler
 # The user can give specific paths where to find the libraries adding cmake
 # options at configure (ex: cmake path/to/project -DPARSEC=path/to/parsec):
 #  PARSEC_DIR                    - Where to find the base directory of parsec
@@ -75,7 +75,7 @@ endif()
 
 # PARSEC may depend on other packages (HWLOC, MPI, CUDA, ...)
 # try to find them if specified as COMPONENTS during the call
-set(PARSEC_LOOK_FOR_HWLOC FALSE)
+set(PARSEC_LOOK_FOR_HWLOC TRUE)
 set(PARSEC_LOOK_FOR_CUDA FALSE)
 set(PARSEC_LOOK_FOR_MPI FALSE)
 
@@ -241,7 +241,7 @@ if(PKG_CONFIG_EXECUTABLE AND NOT PARSEC_GIVEN_BY_USER)
     set(PARSEC_LIBRARIES_DEP "${PARSEC_LIBRARIES}")
 
     # create list of binaries to find
-    set(PARSEC_bins_to_find "daguepp")
+    set(PARSEC_bins_to_find "parsec_ptgpp")
 
     # call cmake macro to find the bin path
     if(PARSEC_PREFIX)
@@ -275,7 +275,7 @@ if( (NOT PKG_CONFIG_EXECUTABLE) OR (PKG_CONFIG_EXECUTABLE AND NOT PARSEC_FOUND) 
     elseif(ENV_PARSEC_DIR)
         list(APPEND _inc_env "${ENV_PARSEC_DIR}")
         list(APPEND _inc_env "${ENV_PARSEC_DIR}/include")
-        list(APPEND _inc_env "${ENV_PARSEC_DIR}/include/dague")
+        list(APPEND _inc_env "${ENV_PARSEC_DIR}/include/parsec")
     else()
         if(WIN32)
             string(REPLACE ":" ";" _inc_env "$ENV{INCLUDE}")
@@ -299,7 +299,7 @@ if( (NOT PKG_CONFIG_EXECUTABLE) OR (PKG_CONFIG_EXECUTABLE AND NOT PARSEC_FOUND) 
     # -------------------------------------------------
 
     # create list of headers to find
-    set(PARSEC_hdrs_to_find "dague_config.h" "dague.h")
+    set(PARSEC_hdrs_to_find "parsec_config.h" "parsec.h")
 
     # call cmake macro to find the header path
     if(PARSEC_INCDIR)
@@ -384,7 +384,7 @@ if( (NOT PKG_CONFIG_EXECUTABLE) OR (PKG_CONFIG_EXECUTABLE AND NOT PARSEC_FOUND) 
     # ----------------------------------------------
 
     # create list of libs to find
-    set(PARSEC_libs_to_find "dague" "dague-base" "dague_distribution" "dague_distribution_matrix")
+    set(PARSEC_libs_to_find "parsec" "parsec-base" "parsec_distribution" "parsec_distribution_matrix")
 
     # call cmake macro to find the lib path
     if(PARSEC_LIBDIR)
@@ -456,7 +456,7 @@ if( (NOT PKG_CONFIG_EXECUTABLE) OR (PKG_CONFIG_EXECUTABLE AND NOT PARSEC_FOUND) 
     list(REMOVE_DUPLICATES _bin_env)
 
     # create list of binaries to find
-    set(PARSEC_bins_to_find "daguepp")
+    set(PARSEC_bins_to_find "parsec_ptgpp")
 
     # call cmake macro to find the bin path
     if(PARSEC_DIR)
@@ -475,13 +475,13 @@ if( (NOT PKG_CONFIG_EXECUTABLE) OR (PKG_CONFIG_EXECUTABLE AND NOT PARSEC_FOUND) 
                       HINTS ${_bin_env})
         endforeach()
     endif()
-    if (PARSEC_daguepp_BIN_DIR)
+    if (PARSEC_parsec_ptgpp_BIN_DIR)
         if (NOT PARSEC_FIND_QUIETLY)
-            message(STATUS "Look for PARSEC - compiler daguepp found in ${PARSEC_daguepp_BIN_DIR}")
+            message(STATUS "Look for PARSEC - compiler parsec_ptgpp found in ${PARSEC_parsec_ptgpp_BIN_DIR}")
         endif()
     else()
         if (PARSEC_FIND_REQUIRED)
-            message(FATAL_ERROR "Look for PARSEC - compiler daguepp not found while required")
+            message(FATAL_ERROR "Look for PARSEC - compiler parsec_ptgpp not found while required")
         endif()
     endif()
 
@@ -583,7 +583,7 @@ if( (NOT PKG_CONFIG_EXECUTABLE) OR (PKG_CONFIG_EXECUTABLE AND NOT PARSEC_FOUND) 
         # test link
         unset(PARSEC_WORKS CACHE)
         include(CheckFunctionExists)
-        check_function_exists(dague_init PARSEC_WORKS)
+        check_function_exists(parsec_init PARSEC_WORKS)
         mark_as_advanced(PARSEC_WORKS)
 
         if(PARSEC_WORKS)
@@ -601,7 +601,7 @@ if( (NOT PKG_CONFIG_EXECUTABLE) OR (PKG_CONFIG_EXECUTABLE AND NOT PARSEC_FOUND) 
             list(REMOVE_DUPLICATES PARSEC_LINKER_FLAGS)
         else()
             if(NOT PARSEC_FIND_QUIETLY)
-                message(STATUS "Looking for parsec : test of dague_init fails")
+                message(STATUS "Looking for parsec : test of parsec_init fails")
                 message(STATUS "CMAKE_REQUIRED_LIBRARIES: ${CMAKE_REQUIRED_LIBRARIES}")
                 message(STATUS "CMAKE_REQUIRED_INCLUDES: ${CMAKE_REQUIRED_INCLUDES}")
                 message(STATUS "Check in CMakeFiles/CMakeError.log to figure out why it fails")
@@ -642,18 +642,18 @@ include(FindPackageHandleStandardArgs)
 if (PKG_CONFIG_EXECUTABLE AND PARSEC_FOUND)
     find_package_handle_standard_args(PARSEC DEFAULT_MSG
                                       PARSEC_LIBRARIES
-                                      PARSEC_daguepp_BIN_DIR)
+                                      PARSEC_parsec_ptgpp_BIN_DIR)
 else()
     find_package_handle_standard_args(PARSEC DEFAULT_MSG
                                       PARSEC_LIBRARIES
-                                      PARSEC_daguepp_BIN_DIR
+                                      PARSEC_parsec_ptgpp_BIN_DIR
                                       PARSEC_WORKS)
 endif()
 
-if ( PARSEC_daguepp_BIN_DIR )
-    find_program(PARSEC_DAGUEPP
-        NAMES daguepp
-        HINTS ${PARSEC_daguepp_BIN_DIR})
+if ( PARSEC_parsec_ptgpp_BIN_DIR )
+    find_program(PARSEC_PTGPP
+        NAMES parsec_ptgpp
+        HINTS ${PARSEC_parsec_ptgpp_BIN_DIR})
 else()
-    set(PARSEC_DAGUEPP "PARSEC_DAGUEPP-NOTFOUND")
+    set(PARSEC_PTGPP "PARSEC_PTGPP-NOTFOUND")
 endif()

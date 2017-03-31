@@ -334,7 +334,7 @@ namespace madness {
 #endif // MADNESS_TASK_PROFILING
 
 #if HAVE_PARSEC
-  parsec_context_t *ThreadPool::parsec = NULL;
+    Parsec::Parsec *ThreadPool::parsec = NULL;
 #endif
     // The constructor is private to enforce the singleton model
     ThreadPool::ThreadPool(int nthread) :
@@ -352,27 +352,22 @@ namespace madness {
 #if HAVE_PARSEC
         //////////// Parsec Related Begin ////////////////////
         /* Scheduler init*/
-	int argc = 1;
-	char ** argv = (char**)malloc(2*sizeof(char*));
-        argv[0]=(char*)malloc(2*sizeof(char));
-        char tmp[] = "t";
-        strcpy(argv[0], tmp);
-	argv[1] = NULL;
-	int nb_threads = ThreadPool::default_nthread() + 1;
-        ThreadPool::parsec = parsec_init(nb_threads, &argc, &argv);
+        int nb_threads = ThreadPool::default_nthread() + 1;
+        std::vector<std::string> params({ "--", "--mca", "debug_verbose", "20" });
+        ThreadPool::parsec = new Parsec::Parsec(nb_threads, params);
 #ifdef PARSEC_PROF_TRACE
-	madness_handle.profiling_array = (int*)malloc(2*sizeof(int));
-	parsec_profiling_add_dictionary_keyword("MADNESS TASK", "fill:CC2828", 0, "",
-					       (int *)&madness_handle.profiling_array[0],
-					       (int *)&madness_handle.profiling_array[1]);
+        madness_handle.profiling_array = (int*)malloc(2*sizeof(int));
+        parsec_profiling_add_dictionary_keyword("MADNESS TASK", "fill:CC2828", 0, "",
+                                                (int *)&madness_handle.profiling_array[0],
+                                                (int *)&madness_handle.profiling_array[1]);
 #endif
-        if( 0 != parsec_enqueue(ThreadPool::parsec, &madness_handle) ) {
+        if( 0 != parsec_enqueue(ThreadPool::parsec->context(), &madness_handle) ) {
             std::cerr << "ERROR: parsec_enqueue!!" << std::endl;
-	}
+        }
         parsec_atomic_add_32b(&madness_handle.nb_tasks, 1);
-        if( 0 != parsec_context_start(ThreadPool::parsec) ) {
+        if( 0 != parsec_context_start(ThreadPool::parsec->context()) ) {
             std::cerr << "ERROR: parsec_context_start!!" << std::endl;
-	}
+        }
         //////////// Parsec Related End ////////////////////
 #elif HAVE_INTEL_TBB
 // #if HAVE_INTEL_TBB
@@ -536,8 +531,8 @@ namespace madness {
 #else  /* HAVE_PARSEC */
 	/* Remove the fake task we used to keep the engine up and running */
         int remaining = parsec_atomic_add_32b(&madness_handle.nb_tasks, -1);
-        parsec_check_complete_cb(&madness_handle, parsec, remaining);
-	parsec_context_wait(parsec);
+        parsec_check_complete_cb(&madness_handle, parsec->context(), remaining);
+        parsec_context_wait(parsec->context());
 #endif
 #ifdef MADNESS_TASK_PROFILING
         instance_ptr->main_thread.profiler().write_to_file();

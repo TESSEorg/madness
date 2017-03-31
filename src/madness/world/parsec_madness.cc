@@ -6,6 +6,10 @@
 #include "thread.h"
 #include <parsec/parsec_internal.h>
 
+extern "C" int fake_update_runtime_task( parsec_handle_t *parsec_handle, int32_t nb_tasks );
+
+int fake_update_runtime_task( parsec_handle_t *parsec_handle, int32_t nb_tasks ) { (void)parsec_handle; (void)nb_tasks; return 0; }
+
 // Here we initialize with the right child class
 namespace madness {
     parsec_hook_return_t complete_madness_task_execution (parsec_execution_unit_t *eu, 
@@ -105,10 +109,19 @@ namespace madness {
             .devices_mask = PARSEC_DEVICES_ALL,
             .initial_number_tasks = 0,
             .priority = 0,
+            .handle_type = 0,
             .nb_pending_actions = 1,
             .context = NULL,
             .startup_hook = NULL,
-            .functions_array = madness_function_array
+            .functions_array = madness_function_array,
+#if defined(PARSEC_PROF_TRACE)
+            .profiling_array = NULL,
+#endif  /* defined(PARSEC_PROF_TRACE) */
+            .on_enqueue = NULL,
+            .on_enqueue_data = NULL,
+            .on_complete = NULL,
+            .on_complete_data = NULL,
+            .update_nb_runtime_task = fake_update_runtime_task
         };
     }
 }

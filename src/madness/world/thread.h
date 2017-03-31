@@ -50,9 +50,8 @@
 
 //////////// Parsec Related Begin ////////////////////
 #ifdef HAVE_PARSEC
-#include <parsec/parsec_internal.h>
-#include <parsec_config.h>
 #include "parsec_madness.h"
+#include "parsec_wrapper.h"
 #endif
 //////////// Parsec Related End ////////////////////
 
@@ -999,21 +998,21 @@ namespace madness {
         }
 #if HAVE_PARSEC
 	    //////////// Parsec Related Begin ////////////////////
-            parsec_execution_context_t exec_context;
-            static const parsec_function_t*   func;
+        parsec_execution_context_t exec_context;
+        static const parsec_function_t*   func;
 
-            /* This function initializes exec_context from the one in parsec.cpp*/
-            void init_exec_context(void)
-            {
-                exec_context.parsec_handle = &madness::madness_handle;
-                exec_context.function = &madness::madness_function;
-                exec_context.chore_id = 0;
-                exec_context.status = PARSEC_TASK_STATUS_NONE;
-                exec_context.priority = is_high_priority() ? 1000 : 0; // 1 & 0 would work as good
-                ((PoolTaskInterface **)exec_context.locals)[0] = this;
-            }
-            //////////// Parsec Related End   ///////////////////
-        
+        /* This function initializes exec_context from the one in parsec.cpp*/
+        void init_exec_context(void)
+        {
+            OBJ_CONSTRUCT(&exec_context, parsec_execution_context_t);
+            exec_context.parsec_handle = &madness::madness_handle;
+            exec_context.function = &madness::madness_function;
+            exec_context.chore_id = 0;
+            exec_context.status = PARSEC_TASK_STATUS_NONE;
+            exec_context.priority = is_high_priority() ? 1000 : 0; // 1 & 0 would work as good
+            ((PoolTaskInterface **)exec_context.locals)[0] = this;
+        }
+        //////////// Parsec Related End   ///////////////////
 #endif
 
 #else
@@ -1281,8 +1280,8 @@ namespace madness {
 
     public:
 #if HAVE_PARSEC
-	////////////////// Parsec Related Begin //////////////////
-        static parsec_context_t *parsec;
+        ////////////////// Parsec Related Begin //////////////////
+        static Parsec::Parsec *parsec;
         ///////////////// Parsec Related End ////////////////////
 #endif
 
@@ -1315,7 +1314,7 @@ namespace madness {
             parsec_execution_context_t *context = &(task->exec_context);
             PARSEC_LIST_ITEM_SINGLETON(context);
             parsec_atomic_add_32b(&madness_handle.nb_tasks, 1);
-            __parsec_schedule(parsec->virtual_processes[0]->execution_units[0], context, 0);
+            __parsec_schedule(parsec->context()->virtual_processes[0]->execution_units[0], context, 0);
             //////////// Parsec Related End ////////////////////
 #elif HAVE_INTEL_TBB
             if(task->is_high_priority()) {
@@ -1471,10 +1470,11 @@ namespace madness {
         /// Desctructor.
         ~ThreadPool() {
 #if HAVE_PARSEC
-          ////////////////// Parsec related Begin /////////////////
-          /* End of scheduling*/
-          parsec_fini((parsec_context_t **)&parsec);
-          ////////////////// Parsec related End /////////////////
+            ////////////////// Parsec related Begin /////////////////
+            /* End of scheduling*/
+            parsec->Finalize();
+            delete(parsec);
+            ////////////////// Parsec related End /////////////////
 #elif HAVE_INTEL_TBB
             tbb_scheduler->terminate();
             delete(tbb_scheduler);

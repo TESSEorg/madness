@@ -11,7 +11,7 @@ set(MADWORLD_HEADERS
     uniqueid.h worldprofile.h timers.h binary_fstream_archive.h mpi_archive.h 
     text_fstream_archive.h worlddc.h mem_func_wrapper.h taskfn.h group.h 
     dist_cache.h distributed_id.h type_traits.h function_traits.h stubmpi.h 
-    bgq_atomics.h binsorter.h parsec_madness.h)
+    bgq_atomics.h binsorter.h parsec_madness.h parsec_wrapper.h)
 set(MADWORLD_SOURCES
     madness_exception.cc world.cc timers.cc future.cc redirectio.cc
     archive_type_names.cc info.cc debug.cc print.cc worldmem.cc worldrmi.cc
@@ -100,7 +100,6 @@ if(ENABLE_UNITTESTS)
       test_worldprofile.cc test_binsorter.cc test_vector.cc test_worldptr.cc 
       test_worldref.cc test_stack.cc test_googletest.cc test_tree.cc)
 
-
   add_unittests(world WORLD_TEST_SOURCES "MADworld;MADgtest")
 
   set_tests_properties(world-test_googletest PROPERTIES WILL_FAIL TRUE)
@@ -111,6 +110,7 @@ if(ENABLE_UNITTESTS)
                     # so just look for it and hope for the best
       cuda_add_library(MADtest_cuda hello_world.cu EXCLUDE_FROM_ALL)  
       target_link_libraries(test_world MADtest_cuda)
+      target_include_directories(test_world PUBLIC ${CUDA_INCLUDE_DIRS})
     endif(CUDA_FOUND)
   endif (ENABLE_PARSEC)
   

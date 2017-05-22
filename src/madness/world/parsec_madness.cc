@@ -56,12 +56,18 @@ namespace madness {
         }
 
         static const __parsec_chore_t __RUN_chores[] = {
-            {.type = PARSEC_DEV_CPU,
-             .evaluate = NULL,
-             .hook = pointer_call},
-            {.type = PARSEC_DEV_NONE,
-             .evaluate = NULL,
-             .hook = (parsec_hook_t *) NULL},
+            {
+                .type = PARSEC_DEV_CPU,
+                .here = NULL,
+                .evaluate = NULL,
+                .hook = pointer_call
+            },
+            {
+                .type = PARSEC_DEV_NONE,
+                .here = NULL,
+                .evaluate = NULL,
+                .hook = (parsec_hook_t *) NULL
+            },
         };
 
 

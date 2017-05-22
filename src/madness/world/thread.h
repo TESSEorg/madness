@@ -1314,6 +1314,7 @@ namespace madness {
             parsec_execution_context_t *context = &(task->exec_context);
             PARSEC_LIST_ITEM_SINGLETON(context);
             parsec_atomic_add_32b(&madness_handle.nb_tasks, 1);
+            context->priority = 10000;
             __parsec_schedule(parsec->context()->virtual_processes[0]->execution_units[0], context, 0);
             //////////// Parsec Related End ////////////////////
 #elif HAVE_INTEL_TBB

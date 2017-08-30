@@ -178,7 +178,7 @@ namespace madness {
         template<typename Q>
         FunctionNode<Q, NDIM>
         convert() const {
-            return FunctionNode<Q, NDIM> (copy(coeff()), _has_children);
+            return FunctionNode<Q, NDIM> (madness::convert<Q,T>(coeff()), _has_children);
         }
 
         /// Returns true if there are coefficients in this node
@@ -852,8 +852,8 @@ namespace madness {
         World& world;
 
         /// getter
-        const int get_initial_level()const{return initial_level;}
-        const int get_special_level()const{return special_level;}
+        int get_initial_level()const{return initial_level;}
+        int get_special_level()const{return special_level;}
         const std::vector<Vector<double,NDIM> >& get_special_points()const{return special_points;}
 
     private:
@@ -1000,7 +1000,7 @@ namespace madness {
                  it!=end; ++it) {
                 const keyT& key = it->first;
                 const typename FunctionImpl<Q,NDIM>::nodeT& node = it->second;
-                coeffs.replace(key,node. template convert<Q>());
+                coeffs.replace(key,node. template convert<T>());
             }
             if (fence)
                 world.gop.fence();

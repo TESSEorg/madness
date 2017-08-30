@@ -1061,7 +1061,7 @@ namespace madness {
         /// \throw std::bad_alloc Description needed.
         /// \param[in] size Description needed.
         /// \return Description needed.
-        static inline void * operator new(std::size_t size) throw(std::bad_alloc) {
+        static inline void * operator new(std::size_t size) {
              return ::operator new(size, tbb::task::allocate_root());
         }
 
@@ -1070,7 +1070,7 @@ namespace madness {
         /// \param[in,out] p Pointer to the task object (or array of task
         ///     objects) to be destroyed.
         /// \param[in] size The size of the array.
-        static inline void operator delete(void* p, std::size_t size) throw() {
+        static inline void operator delete(void* p, std::size_t size) noexcept {
             if(p != nullptr) {
                 tbb::task::destroy(*reinterpret_cast<tbb::task*>(p));
             }
@@ -1145,7 +1145,14 @@ namespace madness {
     /// \attention You must instantiate the pool while running with just one
     /// thread.
     class ThreadPool {
-    private:
+    public:
+      // non-copyable and non-movable
+      ThreadPool(const ThreadPool&) = delete;
+      ThreadPool(ThreadPool&&) = delete;
+      void operator=(const ThreadPool&) = delete;
+      void operator=(ThreadPool&&) = delete;
+
+     private:
         friend class WorldTaskQueue;
 
         // Thread pool data
@@ -1169,11 +1176,6 @@ namespace madness {
         /// \todo Description needed.
         /// \param[in] nthread Description needed.
         ThreadPool(int nthread=-1);
-
-        /// \todo Could we use C++11's `= delete` to hide this?
-        ThreadPool(const ThreadPool&);           // Verboten
-        /// \todo Could we use C++11's `= delete` to hide this?
-        void operator=(const ThreadPool&);       // Verboten
 
         /// Get the number of threads from the environment.
 
